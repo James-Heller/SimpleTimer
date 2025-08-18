@@ -8,6 +8,18 @@ data class Message(
     val topic: String,
     val payload: ByteArray
 ) {
+
+    companion object {
+        fun createPONG(topic: String?): Message {
+            return Message(
+                type = 1, // PONG type
+                topicLength = topic?.length ?: 0,
+                topic = topic?: "",
+                payload = "PONG".toByteArray() // No payload for PONG
+            )
+        }
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -32,5 +44,10 @@ data class Message(
         result = 31 * result + topic.hashCode()
         result = 31 * result + payload.contentHashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "Message(magic=$magic, version=$version, type=$type, topicLength=$topicLength, topic='$topic', payload=${payload.toString(
+            Charsets.UTF_8)})"
     }
 }

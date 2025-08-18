@@ -2,6 +2,7 @@ package space.jamestang.simpletimer.network
 
 import io.netty.buffer.Unpooled
 import org.junit.jupiter.api.Test
+import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 
@@ -10,11 +11,11 @@ class MessageDecoderTest {
     fun `test decode valid message`() {
         val magicNumber = 0x7355608
         val version = 1
-        val type = 2
-        val topic = "testTopic"
+        val type = 1
+        val topic = ""
         val topicBytes = topic.toByteArray(Charsets.UTF_8)
         val topicLength = topicBytes.size
-        val payload = "payloadData".toByteArray(Charsets.UTF_8)
+        val payload = "PING".toByteArray(Charsets.UTF_8)
 
         // 构造消息体
         val bodyBuf = Unpooled.buffer()
@@ -35,8 +36,29 @@ class MessageDecoderTest {
         val dos = DataOutputStream(socket.outputStream)
         dos.write(buf.array()) // 发送数据到服务器
         dos.flush()
-        dos.close()
-        socket.close()
+
+        val dis = DataInputStream(socket.inputStream)
+        val receivedLength = dis.readInt() // 读取长度字段
+        val receivedMagic = dis.readInt()
+        val receivedVersion = dis.readInt()
+        val receivedType = dis.readInt()
+        val receivedTopicLength = dis.readInt()
+        val receivedTopicBytes = ByteArray(receivedTopicLength)
+        dis.readFully(receivedTopicBytes)
+        val receivedTopic = String(receivedTopicBytes, Charsets.UTF_8)
+        val receivedPayload = ByteArray(receivedLength - 16 - receivedTopicLength) // 减去魔数、版本、类型、主题长度的字节数
+        dis.readFully(receivedPayload)
+        val receivedMessage = Message(
+            magic = receivedMagic,
+            version = receivedVersion,
+            type = receivedType,
+            topicLength = receivedTopicLength,
+            topic = receivedTopic,
+            payload = receivedPayload
+        )
+        println(receivedLength)
+        println(receivedMessage)
+        println(receivedMessage.payload.toString(Charsets.UTF_8))
 
 
     }

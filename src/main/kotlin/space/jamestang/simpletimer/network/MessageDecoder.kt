@@ -37,6 +37,8 @@ class MessageDecoder: ByteToMessageDecoder() {
             return
         }
 
+        TopicManager.subscribe(topic, ctx.channel())
+
         val payload = ByteArray(payloadLength)
         `in`.readBytes(payload)
         val data = Message(
@@ -48,5 +50,6 @@ class MessageDecoder: ByteToMessageDecoder() {
             payload = payload
         )
         out.add(data)
+        logger.debug("Decoded message: $data")
     }
 }
