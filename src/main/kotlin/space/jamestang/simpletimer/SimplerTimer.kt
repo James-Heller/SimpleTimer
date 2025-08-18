@@ -30,6 +30,14 @@ class SimplerTimer {
     }
 
     fun run(port: Int = 8080){
+        // 注册关闭钩子，优雅关闭 Netty 线程池
+        Runtime.getRuntime().addShutdownHook(Thread {
+            logger.info("Shutdown signal received, stopping server...")
+            workerEventLoopGroup.shutdownGracefully()
+            bossEventLoopGroup.shutdownGracefully()
+            logger.info("Netty event loop groups shut down.")
+        })
+
         val future = server.bind(port).sync()
 
         if (future.isSuccess) {
