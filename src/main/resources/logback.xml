@@ -5,12 +5,7 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT" />
     </root>
-
-    <!-- Example of a specific logger configuration -->
-    <logger name="com.example.myapp" level="DEBUG">
-        <appender-ref ref="STDOUT" />
-    </logger>
 </configuration>

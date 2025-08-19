@@ -24,6 +24,7 @@ class MessageDecoderTest {
         bodyBuf.writeInt(type)
         bodyBuf.writeInt(topicLength)
         bodyBuf.writeBytes(topicBytes)
+        bodyBuf.writeLong(0L) // 延迟字段，假设为 0
         bodyBuf.writeBytes(payload)
 
         // 构造总帧（LengthFieldBasedFrameDecoder 需要长度字段）
@@ -46,7 +47,8 @@ class MessageDecoderTest {
         val receivedTopicBytes = ByteArray(receivedTopicLength)
         dis.readFully(receivedTopicBytes)
         val receivedTopic = String(receivedTopicBytes, Charsets.UTF_8)
-        val receivedPayload = ByteArray(receivedLength - 16 - receivedTopicLength) // 减去魔数、版本、类型、主题长度的字节数
+        val receivedDelay = dis.readLong() // 读取延迟字段
+        val receivedPayload = ByteArray(receivedLength - 16 - 8 - receivedTopicLength) // 减去魔数、版本、类型、主题长度的字节数
         dis.readFully(receivedPayload)
         val receivedMessage = Message(
             magic = receivedMagic,
@@ -54,6 +56,7 @@ class MessageDecoderTest {
             type = receivedType,
             topicLength = receivedTopicLength,
             topic = receivedTopic,
+            delay = receivedDelay,
             payload = receivedPayload
         )
         println(receivedLength)

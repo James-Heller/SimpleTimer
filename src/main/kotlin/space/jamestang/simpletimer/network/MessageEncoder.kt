@@ -13,6 +13,7 @@ class MessageEncoder: MessageToByteEncoder<Message>() {
         out.writeInt(msg.type)
         out.writeInt(msg.topicLength)
         out.writeBytes(msg.topic.toByteArray(Charsets.UTF_8))
+        out.writeLong(msg.delay)
         out.writeBytes(msg.payload)
     }
 }

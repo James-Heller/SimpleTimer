@@ -30,6 +30,7 @@ class MessageDecoder: ByteToMessageDecoder() {
         val topicBytes = ByteArray(topicLength)
         `in`.readBytes(topicBytes)
         val topic = String(topicBytes, Charsets.UTF_8)
+        val delay = `in`.readLong()
         val payloadLength = `in`.readableBytes()
         if (payloadLength < 0) {
             logger.error("Payload length is negative: $payloadLength")
@@ -37,7 +38,9 @@ class MessageDecoder: ByteToMessageDecoder() {
             return
         }
 
-        TopicManager.subscribe(topic, ctx.channel())
+        if (!topic.isBlank()){
+            TopicManager.subscribe(topic, ctx.channel())
+        }
 
         val payload = ByteArray(payloadLength)
         `in`.readBytes(payload)
@@ -47,9 +50,10 @@ class MessageDecoder: ByteToMessageDecoder() {
             type = type,
             topicLength = topicLength,
             topic = topic,
+            delay = delay,
             payload = payload
         )
         out.add(data)
-        logger.debug("Decoded message: $data")
+        logger.debug("Decoded message: {}", data)
     }
 }
