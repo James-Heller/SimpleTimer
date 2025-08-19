@@ -32,11 +32,9 @@ object TopicManager {
 
     fun publish(topic: String, message: Message) {
         topicChannels[topic]?.forEach { info ->
-            if (info.channel.isActive) {
+            logger.debug("Trying to publish message to topic {} on channel {}.", topic, info.channel?.id())
+            if (info.channel?.isActive == true) {
                 info.channel.writeAndFlush(message)
-            } else {
-                unsubscribe(topic, info.channel)
-                logger.warn("Channel ${info.channel.id()} is inactive, removing from topic $topic.")
             }
         }
     }

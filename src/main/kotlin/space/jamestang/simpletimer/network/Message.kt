@@ -1,7 +1,5 @@
 package space.jamestang.simpletimer.network
 
-import java.nio.ByteBuffer
-
 data class Message(
     val magic: Int = 0x7355608,
     val version: Int = 1,
@@ -35,7 +33,7 @@ data class Message(
                 topicLength = topic.length,
                 topic = topic,
                 delay = 0L, // No delay for scheduled messages
-                payload = ByteBuffer.allocate(Long.SIZE_BYTES).putLong(taskId).array()
+                payload = taskId.toString().toByteArray(Charsets.UTF_8)
             )
         }
 
