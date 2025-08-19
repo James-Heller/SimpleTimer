@@ -43,9 +43,17 @@ object TopicManager {
 
     fun removeTimeoutChannels() {
         val now = System.currentTimeMillis()
-        logger.debug("Removing channels that have not sent heartbeat in the last $HEARTBEAT_TIMEOUT milliseconds.")
+        var count = 0
         topicChannels.forEach { (_, set) ->
-            set.removeIf { now - it.lastHeartbeat > HEARTBEAT_TIMEOUT }
+            set.forEach {
+                if (now - it.lastHeartbeat > HEARTBEAT_TIMEOUT) {
+                    it.channel?.close()
+                    set.remove(it)
+                    count++
+                }
+            }
         }
+
+        logger.debug("Removed {} channels due to heartbeat timeout.", count)
     }
 }

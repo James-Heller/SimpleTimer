@@ -1,21 +1,24 @@
 package space.jamestang.simpletimer.network
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
 import java.nio.ByteBuffer
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class TestClient {
 
     private val HOST = "localhost"
     private val PORT = 8080
+    private val TOPIC = "test-topic"
     private lateinit var socket: Socket
     private lateinit var dis: DataInputStream
     private lateinit var dos: DataOutputStream
 
-    private fun prepareMessage(message: Message): ByteArray {
+    private fun transformMessageToByteArray(message: Message): ByteArray {
         val topicBytes = message.topic.toByteArray(Charsets.UTF_8)
         val payloadBytes = message.payload
         val bodyLength = 4 + 4 + 4 + 4 + topicBytes.size + 8 + payloadBytes.size // magic, version, type, topicLength, topic, delay, payload
@@ -49,22 +52,49 @@ class TestClient {
         return Message(magic, version, type, topicLength, topic, delay, payload)
     }
 
+    private fun createPingMessage(topic: String): Message {
+        return Message(
+            magic = 0x7355608,
+            version = 1,
+            type = 1, // PING type
+            topicLength = topic.length,
+            topic = topic,
+            delay = 0L, // No delay for ping
+            payload = "PING".toByteArray() // No payload for ping
+        )
+    }
+
     @BeforeEach
     fun setup() {
         socket = Socket(HOST, PORT)
         dis = DataInputStream(socket.getInputStream())
         dos = DataOutputStream(socket.getOutputStream())
+
+        val ping = createPingMessage(TOPIC)
+        val pingBytes = transformMessageToByteArray(ping)
+        dos.write(pingBytes)
+        dos.flush()
+        val response = readMessage(dis)
+        assertEquals(0x7355608, response.magic, "Magic number should match")
+        assertEquals(1, response.version, "Version should be 1")
+        assertEquals(1, response.type, "Type should be PING")
+        assertEquals(TOPIC.length, response.topicLength, "Topic length should match")
+        assertEquals(TOPIC, response.topic, "Topic should match")
+        assertEquals(0L, response.delay, "Delay should be 0 for ping")
+        assertEquals("PONG".toByteArray().size, response.payload.size, "Payload size should match PONG response")
+        assertEquals("PONG", String(response.payload, Charsets.UTF_8), "Payload should be PONG")
+    }
+
+    @AfterEach
+    fun tearDown() {
+        dis.close()
+        dos.close()
+        socket.close()
     }
 
     @Test
     fun testScheduleTask() {
 
-        val ping = Message.createPONG("test-topic")
-        val pingBytes = prepareMessage(ping)
-        dos.write(pingBytes)
-        dos.flush()
-        val r = readMessage(dis)
-        println(r)
 
         val task = Message(
             magic = 0x7355608,
@@ -75,17 +105,14 @@ class TestClient {
             delay = 5000L, // 5 seconds delay
             payload = "This is a scheduled task".toByteArray(Charsets.UTF_8)
         )
-        val taskBytes = prepareMessage(task)
+        val taskBytes = transformMessageToByteArray(task)
         dos.write(taskBytes)
         dos.flush()
         val response = readMessage(dis)
-        println(response)
-        val callback = readMessage(dis)
-        println(callback)
+        assertEquals(2, response.type, "Callback type should be 2 (SCHEDULE_TASK)")
 
-        dis.close()
-        dos.close()
-        socket.close()
+        val callback = readMessage(dis)
+        assertEquals("This is a scheduled task", String(callback.payload, Charsets.UTF_8), "Callback payload should match scheduled task payload")
     }
 
 }
