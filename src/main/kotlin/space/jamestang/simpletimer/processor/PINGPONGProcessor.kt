@@ -7,7 +7,7 @@ import space.jamestang.simpletimer.network.TopicManager
 object PINGPONGProcessor {
 
     fun replyPONG(msg: Message, channel: Channel): Message{
-        TopicManager.heartbeat(msg.topic, channel)
+        TopicManager.heartbeat(channel)
         return Message.createPONG(msg.topic)
     }
 }

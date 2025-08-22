@@ -39,7 +39,12 @@ object TopicManager {
         }
     }
 
-    fun heartbeat(topic: String, channel: Channel) = topicChannels[topic]?.find { it.channel == channel }?.lastHeartbeat = System.currentTimeMillis()
+    fun heartbeat(channel: Channel) {
+        val now = System.currentTimeMillis()
+        topicChannels.values.forEach { set ->
+            set.find { it.channel == channel }?.lastHeartbeat = now
+        }
+    }
 
     fun removeTimeoutChannels() {
         val now = System.currentTimeMillis()
